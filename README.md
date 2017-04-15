@@ -4,6 +4,9 @@ xapers-gtk
 
 xapers-gtk is a GTK interface for Xapers, which itself is a personal journal article management system
 
+
+![Basic screenshot](/../screenshots/docs/screenshot.png?raw=true)
+
 Contact
 =======
 
