@@ -31,8 +31,8 @@ Clone the repo:
 Prerequisites
 -------------
 
-Xapers from https://finestructure.net/xapers/
-PyQt5 from https://wiki.python.org/moin/PyQt
+- Xapers from https://finestructure.net/xapers/
+- PyQt5 from https://wiki.python.org/moin/PyQt
 
 Running
 -------
