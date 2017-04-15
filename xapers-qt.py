@@ -173,33 +173,44 @@ class DocWindow(QWidget):
         self.setWindowTitle("xapers-qt: Document editor")
 
 
+class SearchBar(QWidget):
+    def __init__(self, parent):
+        super(SearchBar, self).__init__()
+        self.parent = parent
+        self.makeUI()
+
+    def makeUI(self):
+        searchLayout = QBoxLayout(QBoxLayout.LeftToRight)
+        self.searchLine = QLineEdit()
+        searchButton = QPushButton("Search")
+        searchButton.clicked.connect(self.parent.startSearch)
+        self.searchLine.returnPressed.connect(self.parent.startSearch)
+        searchLayout.addWidget(self.searchLine)
+        searchLayout.addWidget(searchButton)
+        self.setLayout(searchLayout)
+
+    def text(self):
+        return self.searchLine.text()
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.makeUI()
 
     def startSearch(self):
-        self.resultWidget.doSearch(self.searchLine.text())
+        self.resultWidget.doSearch(self.searchBar.text())
 
     def makeUI(self):
         self.resize(800, 300)
         self.setWindowTitle("xapers-qt")
-        layout = QBoxLayout(QBoxLayout.TopToBottom)
-
-        searchLayout = QBoxLayout(QBoxLayout.LeftToRight)
-        self.searchLine = QLineEdit()
-        searchButton = QPushButton("Search")
-        searchButton.clicked.connect(self.startSearch)
-        self.searchLine.returnPressed.connect(self.startSearch)
-        searchLayout.addWidget(self.searchLine)
-        searchLayout.addWidget(searchButton)
-        layout.addLayout(searchLayout)
-
+        mainLayout = QBoxLayout(QBoxLayout.TopToBottom)
+        self.searchBar = SearchBar(self)
         self.resultWidget = ResultsWidget()
-        layout.addWidget(self.resultWidget)
 
-        self.setLayout(layout)
-
+        mainLayout.addWidget(self.searchBar)
+        mainLayout.addWidget(self.resultWidget)
+        self.setLayout(mainLayout)
         esc = QShortcut(QKeySequence("Esc"), self)
         ctrlq = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Q), self)
         esc.activated.connect(QCoreApplication.instance().quit)
