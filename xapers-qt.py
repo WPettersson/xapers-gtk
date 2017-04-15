@@ -28,8 +28,8 @@ from PyQt5.QtCore import (Qt, QCoreApplication, QAbstractItemModel,
                           QModelIndex, QSize)
 from PyQt5.QtGui import QKeySequence, QFontMetrics, QFont
 
-gettext.bindtextdomain('xapers-gtk', '/path/to/my/language/directory')
-gettext.textdomain('xapers-gtk')
+gettext.bindtextdomain('xapers-qt', '/path/to/my/language/directory')
+gettext.textdomain('xapers-qt')
 _ = gettext.gettext
 
 
@@ -170,7 +170,7 @@ class DocWindow(QWidget):
 
     def makeUI(self):
         self.resize(400, 300)
-        self.setWindowTitle("xapers-gtk: Document editor")
+        self.setWindowTitle("xapers-qt: Document editor")
 
 
 class MainWindow(QWidget):
@@ -183,7 +183,7 @@ class MainWindow(QWidget):
 
     def makeUI(self):
         self.resize(800, 300)
-        self.setWindowTitle("xapers-gtk")
+        self.setWindowTitle("xapers-qt")
         layout = QBoxLayout(QBoxLayout.TopToBottom)
 
         searchLayout = QBoxLayout(QBoxLayout.LeftToRight)

@@ -1,8 +1,8 @@
-xapers-gtk 
+xapers-qt 
 ===================================================
 
 
-xapers-gtk is a GTK interface for Xapers, which itself is a personal journal article management system
+xapers-qt is a Qt interface for Xapers, which itself is a personal journal article management system
 
 
 ![Basic screenshot](/../screenshots/doc/Screenshot.png?raw=true)
@@ -10,14 +10,14 @@ xapers-gtk is a GTK interface for Xapers, which itself is a personal journal art
 Contact
 =======
 
-xapers-gtk was written by:
+xapers-qt was written by:
 
     William Pettersson <william@ewpettersson.se>
 
-Development occurs mainly on https://github.com/WPettersson/xapers-gtk/ so feel free to submit issues, comments or pull requests.
+Development occurs mainly on https://github.com/WPettersson/xapers-qt/ so feel free to submit issues, comments or pull requests.
 
 
-Getting xapers-gtk
+Getting xapers-qt
 ==============
 
 Source
@@ -25,7 +25,7 @@ Source
 
 Clone the repo:
 
-    $ git clone https://github.com/WPettersson/xapers-gtk
+    $ git clone https://github.com/WPettersson/xapers-qt
     $ cd xapers
 
 Prerequisites
@@ -37,14 +37,14 @@ Prerequisites
 Running
 -------
 
-For now, just run ./xapers-gtk.py from the repository. A proper build is still
+For now, just run ./xapers-qt.py from the repository. A proper build is still
 forthcoming, this is a young project
 
 
 Licence
 =======
 
-xapers-gtk is free software.
+xapers-qt is free software.
 
 You can redistribute it and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation,
