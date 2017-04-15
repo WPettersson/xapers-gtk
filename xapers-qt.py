@@ -88,6 +88,7 @@ class PapersModel(QAbstractItemModel):
         metric = QFontMetrics(QFont())
         # TODO Could probably be done better
         self.yearWidth = metric.width("8888") + 10
+        self.PDFwidth = metric.width("Open") + 10
         self.docs = []
 
     def setDoc(self, docs):
@@ -109,12 +110,9 @@ class PapersModel(QAbstractItemModel):
         return len(self.docs)
 
     def data(self, index, role):
-        if role == Qt.SizeHintRole:
-            if index.column() == 2:
-                return QSize(25, 15)
+        doc = self.docs[index.row()]
         if role != Qt.DisplayRole:
             return None
-        doc = self.docs[index.row()]
         if index.column() == 0:
             return str(doc.get_title())
         elif index.column() == 1:
@@ -156,6 +154,8 @@ class PapersModel(QAbstractItemModel):
                 return QSize(500, 15)
             if section == 2:
                 return QSize(self.yearWidth, 15)
+            if section == 3:
+                return QSize(self.PDFwidth, 15)
         if role != Qt.DisplayRole:
             return None
         if section < len(HEADINGS):
@@ -165,7 +165,7 @@ class PapersModel(QAbstractItemModel):
 
 class DocWindow(QWidget):
     def __init__(self):
-        super(MainWindow, self).__init__()
+        super(DocWindow, self).__init__()
         self.makeUI()
 
     def makeUI(self):
