@@ -25,8 +25,8 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QLineEdit, QBoxLayout,
                              QPushButton, QTableView, QStackedWidget, QLabel,
                              QHeaderView, QAbstractItemView, QShortcut)
 from PyQt5.QtCore import (Qt, QCoreApplication, QAbstractItemModel,
-                          QModelIndex, QSize)
-from PyQt5.QtGui import QKeySequence, QFontMetrics, QFont
+                          QModelIndex, QSize, QUrl)
+from PyQt5.QtGui import QKeySequence, QFontMetrics, QFont, QDesktopServices
 
 gettext.bindtextdomain('xapers-qt', '/path/to/my/language/directory')
 gettext.textdomain('xapers-qt')
@@ -77,9 +77,20 @@ class PapersTable(QTableView):
         self.horizontalHeader().resizeSections(QHeaderView.ResizeToContents)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.clicked.connect(self.onTableClicked)
 
     def addResults(self, docs=[]):
         self.model.setDoc(docs)
+
+    def onTableClicked(self, index):
+        if (index.isValid()):
+            if index.column() == 3:
+                doc = self.model.getDoc(index.row())
+                try:
+                    path = "file://" + doc.get_fullpaths()[0]
+                    QDesktopServices.openUrl(QUrl(path))
+                except:
+                    pass
 
 
 class PapersModel(QAbstractItemModel):
@@ -95,6 +106,12 @@ class PapersModel(QAbstractItemModel):
         self.beginResetModel()
         self.docs = list(docs)
         self.endResetModel()
+
+    def getDoc(self, index):
+        try:
+            return self.docs[index]
+        except:
+            return []
 
     def index(self, row, column, parent):
         return QAbstractItemModel.createIndex(self, row, column,
@@ -127,7 +144,7 @@ class PapersModel(QAbstractItemModel):
             f = doc.get_files()
             if len(f) > 0:
                 # s = "%s" % (f[0])
-                return "Yes"
+                return "Open"
             return None
         return None
 
