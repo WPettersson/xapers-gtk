@@ -26,7 +26,8 @@ Source
 Clone the repo:
 
     $ git clone https://github.com/WPettersson/xapers-qt
-    $ cd xapers
+    $ cd xapers-qt
+    $ ./xapers-qt.py
 
 Prerequisites
 -------------
