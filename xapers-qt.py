@@ -70,17 +70,29 @@ class PapersTable(QTableView):
         self.model = PapersModel()
         self.setModel(self.model)
         self.setSortingEnabled(True)
+        self.titleProportion = 0.6
         self.horizontalHeader().show()
         self.horizontalHeader().setSectionsMovable(True)
-        self.horizontalHeader().setStretchLastSection(True)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-        self.horizontalHeader().resizeSections(QHeaderView.ResizeToContents)
+        self.horizontalHeader().setMinimumSectionSize(self.model.yearWidth)
+        self.setColumnWidth(0, self.titleProportion * self.width())
+        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.setColumnWidth(2, self.model.yearWidth)
+        self.setColumnWidth(3, self.model.PDFwidth)
+        self.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        self.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.clicked.connect(self.onTableClicked)
+        self.horizontalHeader().sectionResized.connect(self.columnResize)
+
+    def columnResize(self, col, old, new):
+        if col == 0:
+            self.titleProportion = float(new) / self.width()
 
     def addResults(self, docs=[]):
         self.model.setDoc(docs)
+
+    def refresh(self):
+        self.setColumnWidth(0, self.titleProportion * self.width())
 
     def onTableClicked(self, index):
         if (index.isValid()):
@@ -233,6 +245,9 @@ class MainWindow(QWidget):
         esc.activated.connect(QCoreApplication.instance().quit)
         ctrlq.activated.connect(QCoreApplication.instance().quit)
         self.show()
+
+    def resizeEvent(self, resizeEvent):
+        self.resultWidget.results.refresh()
 
 
 def main():
