@@ -23,9 +23,10 @@ import xapers
 import gettext
 from PyQt5.QtWidgets import (QApplication, QWidget, QLineEdit, QBoxLayout,
                              QPushButton, QTableView, QStackedWidget, QLabel,
-                             QHeaderView, QAbstractItemView, QShortcut)
-from PyQt5.QtCore import (Qt, QCoreApplication, QAbstractItemModel,
-                          QModelIndex, QSize, QUrl)
+                             QHeaderView, QAbstractItemView, QShortcut,
+                             QMainWindow)
+from PyQt5.QtCore import (Qt, QAbstractItemModel, QModelIndex, QSize, QUrl,
+                          QSettings)
 from PyQt5.QtGui import QKeySequence, QFontMetrics, QFont, QDesktopServices
 
 gettext.bindtextdomain('xapers-qt', '/path/to/my/language/directory')
@@ -42,8 +43,9 @@ HEADINGS = [_("Title"), _("Author(s)"), _("Year"), _("PDF")]
 
 
 class ResultsWidget(QStackedWidget):
-    def __init__(self):
+    def __init__(self, settings):
         super(ResultsWidget, self).__init__()
+        self.settings = settings
         noResults = QWidget()
         noResultsLayout = QBoxLayout(QBoxLayout.TopToBottom)
         noResultsLabel = QLabel()
@@ -52,7 +54,7 @@ class ResultsWidget(QStackedWidget):
         noResults.setLayout(noResultsLayout)
         self.addWidget(noResults)
 
-        self.results = PapersTable()
+        self.results = PapersTable(self.settings)
         self.addWidget(self.results)
 
     def doSearch(self, searchString=""):
@@ -63,14 +65,22 @@ class ResultsWidget(QStackedWidget):
             self.results.addResults(docs)
             self.setCurrentIndex(1)
 
+    def saveSettings(self):
+        self.results.saveSettings()
+
 
 class PapersTable(QTableView):
-    def __init__(self):
+    def __init__(self, settings):
         super(PapersTable, self).__init__()
+        self.settings = settings
         self.model = PapersModel()
         self.setModel(self.model)
         self.setSortingEnabled(True)
-        self.titleProportion = 0.6
+        try:
+            setting = self.settings.value("table/titleProportion", 0.6)
+            self.titleProportion = float(setting)
+        except ValueError:
+            self.titleProportion = 0.6
         self.horizontalHeader().show()
         self.horizontalHeader().setSectionsMovable(True)
         self.horizontalHeader().setMinimumSectionSize(self.model.yearWidth)
@@ -90,6 +100,9 @@ class PapersTable(QTableView):
 
     def addResults(self, docs=[]):
         self.model.setDoc(docs)
+
+    def saveSettings(self):
+        self.settings.setValue("table/titleProportion", self.titleProportion)
 
     def refresh(self):
         self.setColumnWidth(0, self.titleProportion * self.width())
@@ -222,9 +235,10 @@ class SearchBar(QWidget):
         return self.searchLine.text()
 
 
-class MainWindow(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.settings = QSettings("xapers-qt", "xapers-qt")
         self.makeUI()
 
     def startSearch(self):
@@ -232,19 +246,38 @@ class MainWindow(QWidget):
 
     def makeUI(self):
         self.resize(800, 300)
+        try:
+            width = int(self.settings.value("main/width", 800))
+        except ValueError:
+            width = 800
+        try:
+            height = int(self.settings.value("main/height", 300))
+        except ValueError:
+            height = 300
+        self.resize(width, height)
         self.setWindowTitle("xapers-qt")
         mainLayout = QBoxLayout(QBoxLayout.TopToBottom)
         self.searchBar = SearchBar(self)
-        self.resultWidget = ResultsWidget()
+        self.resultWidget = ResultsWidget(self.settings)
 
         mainLayout.addWidget(self.searchBar)
         mainLayout.addWidget(self.resultWidget)
-        self.setLayout(mainLayout)
+        self.central = QWidget()
+        self.central.setLayout(mainLayout)
+        self.setCentralWidget(self.central)
         esc = QShortcut(QKeySequence("Esc"), self)
         ctrlq = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Q), self)
-        esc.activated.connect(QCoreApplication.instance().quit)
-        ctrlq.activated.connect(QCoreApplication.instance().quit)
+        esc.activated.connect(self.close)
+        ctrlq.activated.connect(self.close)
         self.show()
+
+    def saveSettings(self):
+        self.settings.setValue("main/width", self.width())
+        self.settings.setValue("main/height", self.height())
+        self.resultWidget.saveSettings()
+
+    def closeEvent(self, event):
+        self.saveSettings()
 
     def resizeEvent(self, resizeEvent):
         self.resultWidget.results.refresh()
