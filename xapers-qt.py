@@ -69,6 +69,19 @@ class ResultsWidget(QStackedWidget):
         self.results.saveSettings()
 
 
+class PDFButton(QPushButton):
+    def __init__(self, url):
+        super(PDFButton, self).__init__()
+        self.url = url
+        self.setText("Open PDF")
+        self.setStyleSheet("margin: 5px;")
+        self.clicked.connect(self.openUrl)
+
+    def openUrl(self):
+        path = "file://" + self.url
+        QDesktopServices.openUrl(QUrl(path))
+
+
 class PapersTable(QTableView):
     def __init__(self, settings):
         super(PapersTable, self).__init__()
@@ -91,7 +104,6 @@ class PapersTable(QTableView):
         self.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
         self.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.clicked.connect(self.onTableClicked)
         self.horizontalHeader().sectionResized.connect(self.columnResize)
 
     def columnResize(self, col, old, new):
@@ -99,23 +111,23 @@ class PapersTable(QTableView):
             self.titleProportion = float(new) / self.width()
 
     def addResults(self, docs=[]):
-        self.model.setDoc(docs)
+        listed = list(docs)
+        self.model.setDoc(listed)
+        count = 0
+        for d in listed:
+            try:
+                button = PDFButton(d.get_fullpaths()[0])
+                # Third column is PDF
+                self.setIndexWidget(self.model.index(count, 3, 0), button)
+            except IndexError:  # No PDF file found
+                pass
+            count += 1
 
     def saveSettings(self):
         self.settings.setValue("table/titleProportion", self.titleProportion)
 
     def refresh(self):
         self.setColumnWidth(0, self.titleProportion * self.width())
-
-    def onTableClicked(self, index):
-        if (index.isValid()):
-            if index.column() == 3:
-                doc = self.model.getDoc(index.row())
-                try:
-                    path = "file://" + doc.get_fullpaths()[0]
-                    QDesktopServices.openUrl(QUrl(path))
-                except:
-                    pass
 
 
 class PapersModel(QAbstractItemModel):
@@ -124,7 +136,7 @@ class PapersModel(QAbstractItemModel):
         metric = QFontMetrics(QFont())
         # TODO Could probably be done better
         self.yearWidth = metric.width("8888") + 10
-        self.PDFwidth = metric.width("Open") + 10
+        self.PDFwidth = metric.width("Open PDF") + 30
         self.docs = []
 
     def setDoc(self, docs):
@@ -167,9 +179,9 @@ class PapersModel(QAbstractItemModel):
             return doc.get_year()
         elif index.column() == 3:
             f = doc.get_files()
-            if len(f) > 0:
-                # s = "%s" % (f[0])
-                return "Open"
+            # If len(f) > 0 we will insert a button instead
+            if len(f) == 0:
+                return "No PDF found"
             return None
         return None
 
