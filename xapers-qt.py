@@ -41,6 +41,9 @@ CONSTS['cols'] = 4
 
 HEADINGS = [_("Title"), _("Author(s)"), _("Year"), _("PDF")]
 
+KEYBINDS = [["Ctrl+L", "Search"], ["j", "Next"], ["k", "Prev"],
+            ["Enter", "Open"], ["Esc", "Exit"], ["Ctrl+q", "Exit"]]
+
 
 class ResultsWidget(QStackedWidget):
     def __init__(self, settings):
@@ -68,6 +71,15 @@ class ResultsWidget(QStackedWidget):
     def saveSettings(self):
         self.results.saveSettings()
 
+    def selectNext(self):
+        self.results.selectNext()
+
+    def selectPrev(self):
+        self.results.selectPrev()
+
+    def openDoc(self):
+        self.results.openDoc()
+
 
 class PDFButton(QPushButton):
     def __init__(self, url):
@@ -88,6 +100,7 @@ class PapersTable(QTableView):
         self.settings = settings
         self.model = PapersModel()
         self.setModel(self.model)
+        self.activated.connect(self.openDoc)
         self.setSortingEnabled(True)
         try:
             setting = self.settings.value("table/titleProportion", 0.6)
@@ -122,6 +135,32 @@ class PapersTable(QTableView):
             except IndexError:  # No PDF file found
                 pass
             count += 1
+        self.selectRow(0)
+        self.setFocus()
+
+    def selectNext(self):
+        try:
+            index = self.selectionModel().selectedRows()[0]
+            self.selectRow(index.row()+1)
+        except:
+            pass
+
+    def selectPrev(self):
+        try:
+            index = self.selectionModel().selectedRows()[0]
+            self.selectRow(index.row()-1)
+        except:
+            pass
+
+    def openDoc(self):
+        try:
+            index = self.selectionModel().selectedRows()[0]
+            doc = self.model.docs[index.row()]
+            url = doc.get_fullpaths()[0]
+            path = "file://" + url
+            QDesktopServices.openUrl(QUrl(path))
+        except:
+            pass
 
     def saveSettings(self):
         self.settings.setValue("table/titleProportion", self.titleProportion)
@@ -251,6 +290,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.settings = QSettings("xapers-qt", "xapers-qt")
+        self.shortcuts = []
         self.makeUI()
 
     def startSearch(self):
@@ -277,11 +317,35 @@ class MainWindow(QMainWindow):
         self.central = QWidget()
         self.central.setLayout(mainLayout)
         self.setCentralWidget(self.central)
-        esc = QShortcut(QKeySequence("Esc"), self)
-        ctrlq = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Q), self)
-        esc.activated.connect(self.close)
-        ctrlq.activated.connect(self.close)
+        self.setupKeybinds(KEYBINDS)
         self.show()
+
+    def setupKeybinds(self, binds):
+        if not self.shortcuts:
+            self.shortcuts = []
+        else:
+            for s in self.shortcuts:
+                pass  # TODO Delete shortcut
+        for keys, action in binds:
+            if action == "Search":
+                func = self.focusSearchBar
+            elif action == "Next":
+                func = self.resultWidget.selectNext
+            elif action == "Prev":
+                func = self.resultWidget.selectPrev
+            elif action == "Open":
+                func = self.resultWidget.openDoc
+            elif action == "Exit":
+                func = self.close
+            else:
+                action = None
+            if action:
+                shortcut = QShortcut(QKeySequence(keys), self)
+                shortcut.activated.connect(func)
+                self.shortcuts.append(shortcut)
+
+    def focusSearchBar(self):
+        self.searchBar.searchLine.setFocus(Qt.ShortcutFocusReason)
 
     def saveSettings(self):
         self.settings.setValue("main/width", self.width())
