@@ -19,22 +19,25 @@
 # Entry = Title, Authors, Year, PDF-link
 
 import sys
+import os
 import xapers
 import gettext
 from PyQt5.QtWidgets import (QApplication, QWidget, QLineEdit, QBoxLayout,
                              QPushButton, QTableView, QStackedWidget, QLabel,
                              QHeaderView, QAbstractItemView, QShortcut,
-                             QMainWindow)
+                             QMainWindow, QGridLayout, QDialogButtonBox,
+                             QFileDialog, QMessageBox)
 from PyQt5.QtCore import (Qt, QAbstractItemModel, QModelIndex, QSize, QUrl,
                           QSettings)
-from PyQt5.QtGui import QKeySequence, QFontMetrics, QFont, QDesktopServices
+from PyQt5.QtGui import (QKeySequence, QFontMetrics, QFont, QDesktopServices,
+                         QIcon)
 
 gettext.bindtextdomain('xapers-qt', '/path/to/my/language/directory')
 gettext.textdomain('xapers-qt')
 _ = gettext.gettext
 
 
-db = xapers.Database('~/.xapers/docs')
+db = xapers.Database('~/.xapers/docs', writable=True)
 
 CONSTS = {}
 CONSTS['cols'] = 4
@@ -42,13 +45,15 @@ CONSTS['cols'] = 4
 HEADINGS = [_("Title"), _("Author(s)"), _("Year"), _("PDF")]
 
 KEYBINDS = [["Ctrl+L", "Search"], ["j", "Next"], ["k", "Prev"],
-            ["Enter", "Open"], ["Esc", "Exit"], ["Ctrl+q", "Exit"]]
+            ["Enter", "OpenPDF"], ["o", "OpenDoc"],
+            ["Esc", "Exit"], ["Ctrl+q", "Exit"]]
 
 
 class ResultsWidget(QStackedWidget):
     def __init__(self, settings):
         super(ResultsWidget, self).__init__()
         self.settings = settings
+        self.children = []
         noResults = QWidget()
         noResultsLayout = QBoxLayout(QBoxLayout.TopToBottom)
         noResultsLabel = QLabel()
@@ -77,8 +82,11 @@ class ResultsWidget(QStackedWidget):
     def selectPrev(self):
         self.results.selectPrev()
 
+    def openPDF(self):
+        self.results.openPDF()
+
     def openDoc(self):
-        self.results.openDoc()
+        self.children.append(self.results.openDoc())
 
 
 class PDFButton(QPushButton):
@@ -100,7 +108,7 @@ class PapersTable(QTableView):
         self.settings = settings
         self.model = PapersModel()
         self.setModel(self.model)
-        self.activated.connect(self.openDoc)
+        self.activated.connect(self.openPDF)
         self.setSortingEnabled(True)
         try:
             setting = self.settings.value("table/titleProportion", 0.6)
@@ -156,6 +164,14 @@ class PapersTable(QTableView):
         try:
             index = self.selectionModel().selectedRows()[0]
             doc = self.model.docs[index.row()]
+            return DocWindow(doc)
+        except:
+            pass
+
+    def openPDF(self):
+        try:
+            index = self.selectionModel().selectedRows()[0]
+            doc = self.model.docs[index.row()]
             url = doc.get_fullpaths()[0]
             path = "file://" + url
             QDesktopServices.openUrl(QUrl(path))
@@ -207,9 +223,11 @@ class PapersModel(QAbstractItemModel):
         if role != Qt.DisplayRole:
             return None
         if index.column() == 0:
-            return str(doc.get_title())
+            return unicode(doc.get_title())
         elif index.column() == 1:
             auth = doc.get_authors()
+            if not auth:
+                return ""
             if len(auth) > 3:
                 return ", ".join(auth[0:2]) + " et al."
             else:
@@ -256,14 +274,147 @@ class PapersModel(QAbstractItemModel):
         return None
 
 
+class PDFLabel(QLabel):
+    def __init__(self, text, url):
+        super(PDFLabel, self).__init__()
+        markup = "<a href=\"%s\">%s</a>" % (url, text)
+        self.setText(markup)
+        self.setOpenExternalLinks(True)
+
+
+class PDFList(QWidget):
+    def __init__(self, parent, doc):
+        super(PDFList, self).__init__()
+        self.parent = parent
+        self.doc = doc
+        self.grid = QGridLayout()
+        self.layout = QBoxLayout(QBoxLayout.TopToBottom)
+        self.addButton = QPushButton("&Add PDF")
+        self.addButton.clicked.connect(self.parent.addPDF)
+        self.refresh()
+
+    def refresh(self):
+        item = self.grid.takeAt(0)
+        while item:
+            del item
+            item = self.grid.takeAt(0)
+        item = self.layout.takeAt(0)
+        while item:
+            del item
+            item = self.layout.takeAt(0)
+        files = self.doc.get_files()
+        paths = self.doc.get_fullpaths()
+        for index in range(len(files)):
+            l = PDFLabel(files[index], paths[index])
+            d = QPushButton()
+            d.setIcon(QIcon.fromTheme("edit-delete"))
+            d.setText("")
+            d.setEnabled(False)  # TODO Delete this PDF
+            self.grid.addWidget(l, index, 0)
+            self.grid.addWidget(d, index, 1)
+        self.layout.addLayout(self.grid)
+        self.layout.addWidget(self.addButton)
+        self.setLayout(self.layout)
+
+
 class DocWindow(QWidget):
-    def __init__(self):
+    def __init__(self, doc):
         super(DocWindow, self).__init__()
+        self.doc = doc
+        self.shortcuts = []
+        self.modified = False
+        self.setupKeybinds(KEYBINDS)
         self.makeUI()
 
     def makeUI(self):
         self.resize(400, 300)
         self.setWindowTitle("xapers-qt: Document editor")
+        self.layout = QBoxLayout(QBoxLayout.TopToBottom)
+        self.entries = QGridLayout()
+        self.lines = {}
+        self.addPair("Key", self.doc.get_key())
+        self.addPair("Title", self.doc.get_title())
+        self.addPair("Year", self.doc.get_year())
+        self.pdfs = PDFList(self, self.doc)
+        self.layout.addLayout(self.entries)
+        self.layout.addWidget(self.pdfs)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Save |
+                                          QDialogButtonBox.Discard)
+        self.layout.addWidget(self.buttonBox)
+        self.buttonBox.accepted.connect(self.saveAndClose)
+        discard = self.buttonBox.button(QDialogButtonBox.Discard)
+        discard.clicked.connect(self.resetAndClose)
+        self.setLayout(self.layout)
+        self.show()
+
+    def saveAndClose(self):
+        self.saveChanges()
+        self.close()
+
+    def resetAndClose(self):
+        self.lines["Key"].setText(self.doc.get_key())
+        self.lines["Title"].setText(self.doc.get_title())
+        self.lines["Year"].setText(self.doc.get_year())
+        self.modified = False
+        self.close()
+
+    def addPair(self, text, value, PDF=False):
+        r = self.entries.rowCount()
+        self.entries.addWidget(QLabel(text), r, 0)
+        if PDF:
+            l = QBoxLayout(QBoxLayout.LeftToRight)
+            openPDFButton = QPushButton("&Open PDF")
+            if not value:
+                openPDFButton.setEnabled(False)
+            else:
+                print(value)
+            l.addWidget(openPDFButton)
+            selectPDFButton = QPushButton("&Select PDF")
+            l.addWidget(selectPDFButton)
+            self.entries.addLayout(l, r, 1)
+        else:
+            self.lines[text] = QLineEdit(value)
+            self.entries.addWidget(self.lines[text], r, 1)
+
+    def addPDF(self):
+        fileName, group = QFileDialog.getOpenFileName(self, _("Open PDF"),
+                                                      str(), "PDFs (*.pdf)")
+        if fileName:
+            if os.path.exists(fileName):
+                self.doc.add_file(fileName)
+                self.modified = True
+        self.pdfs.refresh()
+
+    def setupKeybinds(self, binds):
+        for s in self.shortcuts:
+            pass  # TODO Delete shortcut?
+        for keys, action in binds:
+            if action == "Exit":
+                func = self.close
+            else:
+                action = None
+            if action:
+                shortcut = QShortcut(QKeySequence(keys), self)
+                shortcut.activated.connect(func)
+                self.shortcuts.append(shortcut)
+
+    def closeEvent(self, event):
+        if self.lines["Key"].text() != self.doc.get_key():
+            self.modified = True
+        if self.lines["Title"].text() != self.doc.get_title():
+            self.modified = True
+        if self.lines["Year"].text() != self.doc.get_year():
+            self.modified = True
+        if self.modified:
+            m = QMessageBox.question(self, "Save changes?",
+                                     ("Do you want to save the changes you "
+                                      "made to this document?"))
+            if m == QMessageBox.Yes:
+                self.saveChanges()
+
+    def saveChanges(self):
+        self.doc.sync()
+        self.modified = False
 
 
 class SearchBar(QWidget):
@@ -321,11 +472,8 @@ class MainWindow(QMainWindow):
         self.show()
 
     def setupKeybinds(self, binds):
-        if not self.shortcuts:
-            self.shortcuts = []
-        else:
-            for s in self.shortcuts:
-                pass  # TODO Delete shortcut
+        for s in self.shortcuts:
+            pass  # TODO Delete shortcut?
         for keys, action in binds:
             if action == "Search":
                 func = self.focusSearchBar
@@ -333,7 +481,9 @@ class MainWindow(QMainWindow):
                 func = self.resultWidget.selectNext
             elif action == "Prev":
                 func = self.resultWidget.selectPrev
-            elif action == "Open":
+            elif action == "OpenPDF":
+                func = self.resultWidget.openPDF
+            elif action == "OpenDoc":
                 func = self.resultWidget.openDoc
             elif action == "Exit":
                 func = self.close
