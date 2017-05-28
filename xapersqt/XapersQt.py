@@ -20,10 +20,12 @@
 # be raised at https://github.com/WPettersson/xapers-qt/
 
 from PyQt5.QtWidgets import QApplication
+from xapers import Database
 from xapersqt.MainWindow import MainWindow
 
 
 class XapersQt(QApplication):
-    def __init__(self, argv, db, keybinds):
+    def __init__(self, argv, dbpath, keybinds):
+        self.db = Database(dbpath, writable=True)
         super(XapersQt, self).__init__(argv)
-        self.m = MainWindow(db, keybinds)
+        self.m = MainWindow(self.db, keybinds)
