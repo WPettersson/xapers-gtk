@@ -1,3 +1,7 @@
+"""Describes the window and widgets which show details about an individual
+document in the database.
+"""
+
 import os
 import gettext
 from PyQt5.QtWidgets import (QWidget, QLineEdit, QBoxLayout,
@@ -56,12 +60,13 @@ class PDFList(QWidget):
 
 
 class DocWindow(QWidget):
-    def __init__(self, doc, keybinds):
+    def __init__(self, doc, keybinds=None):
         super(DocWindow, self).__init__()
         self.doc = doc
         self.shortcuts = []
         self.modified = False
-        self.setupKeybinds(keybinds)
+        if keybinds:
+            self.setupKeybinds(keybinds)
         self.makeUI()
 
     def makeUI(self):

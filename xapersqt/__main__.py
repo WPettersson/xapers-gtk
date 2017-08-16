@@ -1,3 +1,5 @@
+"""Runs the program if called as a module."""
+
 # This file is a part of XapersQt - a Qt interface to the Xapers article
 # database system. Copyright (C) 2017 William Pettersson
 #
@@ -17,9 +19,9 @@
 # The author can be contacted at william@ewpettersson.se and issues can
 # be raised at https://github.com/WPettersson/xapers-qt/
 
-from xapersqt.XapersQt import XapersQt
 import sys
 import xapers
+from xapersqt.XapersQt import XapersQt
 
 
 def __main__():
@@ -30,6 +32,7 @@ def __main__():
                 ["Esc", "Exit"], ["Ctrl+q", "Exit"]]
     app = XapersQt(sys.argv, db, keybinds)
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     __main__()
