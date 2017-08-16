@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 import os
 import gettext
 from PyQt5.QtWidgets import (QWidget, QLineEdit, QBoxLayout,

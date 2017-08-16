@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 # This file is a part of XapersQt - a Qt interface to the Xapers article
 # database system. Copyright (C) 2017 William Pettersson
 #
@@ -214,7 +212,7 @@ class PapersModel(QAbstractItemModel):
         if role != Qt.DisplayRole:
             return None
         if index.column() == 0:
-            return unicode(doc.get_title())
+            return doc.get_title()
         elif index.column() == 1:
             auth = doc.get_authors()
             if not auth:
