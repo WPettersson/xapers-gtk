@@ -104,5 +104,8 @@ class DocWindow(QWidget):
 
     def saveChanges(self):
         """Save any changes made to the document."""
+        self.doc.set_key(self.lines["Key"].text())
+        self.doc.set_title(self.lines["Title"].text())
+        self.doc.set_year(self.lines["Year"].text())
         self.doc.sync()
         self.modified = False
