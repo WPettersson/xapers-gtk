@@ -64,10 +64,10 @@ class ResultsWidget(QStackedWidget):
         returned, instead they are displayed in the table inside this widget.
         """
         docs = self.db.search(searchString)
-        if docs:
+        if not docs:
             self.setCurrentIndex(0)
         else:
-            self.results.addResults(docs)
+            self.results.add_results(docs)
             self.setCurrentIndex(1)
 
     def saveSettings(self):
