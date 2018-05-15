@@ -87,6 +87,23 @@ class DocWindow(QWidget):
                 shortcut.activated.connect(func)
                 self.shortcuts.append(shortcut)
 
+    def dragEnterEvent(self, event):
+        """Qt override to allow drag+drop of PDF files."""
+        mime = event.mimeData()
+        if mime.hasUrls():
+            urls = mime.urls()
+            if len(urls) == 1 and urls[0].toString()[-4:] == ".pdf":
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        self.doc.add_file(event.mimeData().urls()[0].path())
+        self.modified = True
+        self.pdfs.refresh()
+
     def closeEvent(self, event):
         """Window being closed. Save if changes are detected."""
         if self.ui.key.text() != self.doc.get_key():
