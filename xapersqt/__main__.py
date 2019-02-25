@@ -1,7 +1,7 @@
 """Runs the program if called as a module."""
 
 # This file is a part of XapersQt - a Qt interface to the Xapers article
-# database system. Copyright (C) 2017 William Pettersson
+# database system. Copyright (C) 2019 William Pettersson
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ from xapersqt.XapersQt import XapersQt
 
 
 def __main__():
-    db = xapers.Database('~/.xapers/docs', writable=True)
+    db = '~/.xapers/docs'
 
     keybinds = [["Ctrl+L", "Search"], ["j", "Next"], ["k", "Prev"],
                 ["Enter", "OpenPDF"], ["o", "OpenDoc"],
