@@ -80,6 +80,9 @@ class DocWindow(QWidget):
         self.addPair("Year", self.doc.get_year())
         self.pdfs = PDFList(self, self.doc)
         self.layout.addLayout(self.entries)
+        self.tag_list = QLabel()
+        self.refresh_tags()
+        self.layout.addWidget(self.tag_list)
         self.layout.addWidget(self.pdfs)
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Save |
                                           QDialogButtonBox.Discard)
@@ -100,6 +103,15 @@ class DocWindow(QWidget):
         self.lines["Year"].setText(self.doc.get_year())
         self.modified = False
         self.close()
+
+    def refresh_tags(self):
+        first = True
+        text = ""
+        for tag in self.doc.get_tags():
+            if not first:
+                text += " "
+            text += chr(0x1F3F7) + " " + tag
+        self.tag_list.setText(text)
 
     def addPair(self, text, value, PDF=False):
         r = self.entries.rowCount()
