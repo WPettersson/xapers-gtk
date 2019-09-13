@@ -22,6 +22,8 @@ contained within it.
 # be raised at https://github.com/WPettersson/xapers-qt/
 
 from xapersqt.ui_MainWindow import Ui_MainWindow
+from xapersqt.DocWindow import DocWindow
+from xapersqt.ImportWindow import ImportWindow
 
 from PyQt5.QtWidgets import QShortcut, QMainWindow
 from PyQt5.QtCore import Qt, QSettings
@@ -38,11 +40,13 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.results = self.ui.resultsWidget
+        self._children = []
         self.searchBar = self.ui.searchBar
         self.results.setDb(self.db)
         self.results.setSettings(self.settings)
         self.setupKeybinds(keybinds)
         self.restore_size()
+        self._import = None
         self.show()
 
     def restore_size(self):
@@ -62,6 +66,10 @@ class MainWindow(QMainWindow):
         """Launches a search."""
         self.results.doSearch(self.searchBar.text())
 
+    def show_import(self):
+        """Show the import window."""
+        self._import = ImportWindow(self, self.db)
+
     def setupKeybinds(self, binds):
         """Setup the keyboard shortcuts.
         """
@@ -78,6 +86,8 @@ class MainWindow(QMainWindow):
                 func = self.results.openPDF
             elif action == "OpenDoc":
                 func = self.results.openDoc
+            elif action == "Import":
+                func = self.show_import
             elif action == "Exit":
                 func = self.close
             else:
@@ -101,6 +111,12 @@ class MainWindow(QMainWindow):
         """Things to do when closing the window.
         """
         self.saveSettings()
+
+    def openDoc(self, doc):
+        """Open a documents details.
+        """
+        self._children.append(DocWindow(doc))
+
 
     def resizeEvent(self, resizeEvent):
         """Things to do when resizing the window.
