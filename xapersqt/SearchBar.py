@@ -39,3 +39,8 @@ class SearchBar(QWidget):
     def text(self):
         """Return the current search query term."""
         return self.ui.searchLine.text()
+
+    @property
+    def searchLine(self):
+        """The actual LineEdit."""
+        return self.ui.searchLine
