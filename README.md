@@ -14,7 +14,7 @@ xapers-qt was written by:
 
     William Pettersson <william@ewpettersson.se>
 
-Development occurs mainly on https://github.com/WPettersson/xapers-qt/ so feel free to submit issues, comments or pull requests.
+Development occurs at https://gitlab.com/wpettersson/xapers-qt/ so feel free to submit issues, comments or pull requests there.
 
 
 Getting xapers-qt
@@ -25,7 +25,7 @@ Source
 
 Clone the repo:
 
-    $ git clone https://github.com/WPettersson/xapers-qt
+    $ git clone https://gitlab.com/wpettersson/xapers-qt.git
     $ cd xapers-qt
     $ ./xapers-qt.py
 
